@@ -1,5 +1,5 @@
-name: JIB container publish
-description: "Build automatically container with JIB and publish it to GitHub Packages."
+name: JIB image publish
+description: "Build automatically container image with JIB and publish it to GitHub Packages or Docker Hub."
 branding:
   icon: "package"
   color: "gray-dark"
@@ -38,7 +38,7 @@ inputs:
   java-distribution:
     description: "Java distribution to use"
     required: false
-    default: "adopt"
+    default: "temurin"
   # Maven module
   module:
     description: "Maven project to build image of (in a multi module project)"
@@ -52,19 +52,19 @@ runs:
   using: "composite"
   steps:
     - id: downcase
-      uses: ASzc/change-string-case-action@v2
+      uses: ASzc/change-string-case-action@v3
       with:
         string: ${{ inputs.IMAGE_NAME }}
 
     - uses: actions/checkout@v3
-    - name: Set up JDK 17
+    - name: Set up JDK
       uses: actions/setup-java@v3
       with:
         distribution: ${{ inputs.java-distribution }}
         java-version: ${{ inputs.java-version }}
         cache: maven
 
-    - name: Build JIB container and publish to GitHub Packages
+    - name: Build JIB container and publish
       run: |
         if [ ! -z "${{ inputs.module }}" ]; then
           MULTI_MODULE_ARGS="-am -pl ${{ inputs.module }}"
@@ -74,7 +74,7 @@ runs:
           MAIN_CLASS_ARGS="-Djib.container.mainClass=${{ inputs.main-class }}"
         fi
 
-        mvn package com.google.cloud.tools:jib-maven-plugin:3.2.1:build \
+        mvn -B package com.google.cloud.tools:jib-maven-plugin:3.2.1:build \
         -Djib.to.image=${{ inputs.REGISTRY }}/${{ steps.downcase.outputs.lowercase }}:${{ inputs.tag-name }} \
         -Djib.to.auth.username=${{ inputs.USERNAME }} \
         -Djib.to.auth.password=${{ inputs.PASSWORD }} $MULTI_MODULE_ARGS $MAIN_CLASS_ARGS
