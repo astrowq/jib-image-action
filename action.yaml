@@ -47,6 +47,10 @@ inputs:
   main-class:
     description: "Main class used as entry point"
     required: false
+  working-directory:
+    description: "Working directory"
+    required: false
+    default: "."
 
 runs:
   using: "composite"
@@ -65,6 +69,7 @@ runs:
         cache: maven
 
     - name: Build JIB container and publish
+      working-directory: ${{ inputs.working-directory }}
       run: |
         if [ ! -z "${{ inputs.module }}" ]; then
           MULTI_MODULE_ARGS="-am -pl ${{ inputs.module }}"
